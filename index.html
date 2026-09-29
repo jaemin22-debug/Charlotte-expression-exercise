@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Classroom English - 5 Expressions Speaking Practice</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #dc2626;
+      --danger-hover: #b91c1c;
+      --success: #16a34a;
+      --success-hover: #15803d;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --border: #cbd5e1;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 1.5rem 1rem; line-height: 1.5; touch-action: pan-y; }
+    .container { 
+      max-width: 860px; 
+      margin: 0 auto; 
+      background: var(--card); 
+      padding: 2rem; 
+      border-radius: 20px; 
+      box-shadow: 0 8px 20px rgba(0,0,0,0.06); 
+    }
+    
+    h1 { font-size: 1.6rem; margin-bottom: 0.5rem; text-align: center; font-weight: 700; color: #1e293b; }
+    p.guide { text-align: center; color: #64748b; font-size: 0.95rem; margin-bottom: 1.5rem; }
+
+    /* 입력 탭/모드 전환 */
+    .mode-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .mode-buttons {
+      display: inline-flex;
+      background: #e2e8f0;
+      padding: 3px;
+      border-radius: 10px;
+    }
+    .mode-btn {
+      padding: 0.4rem 0.9rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #64748b;
+    }
+    .mode-btn.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    .clear-btn {
+      font-size: 0.85rem;
+      padding: 0.4rem 0.8rem;
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      color: #475569;
+    }
+
+    /* 필기 캔버스 & 텍스트 영역 래퍼 */
+    .board-container {
+      position: relative;
+      width: 100%;
+      height: 420px;
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      background: #ffffff;
+      margin-bottom: 1.5rem;
+    }
+    
+    /* 애플펜슬 손글씨 필기용 캔버스 */
+    #pencilCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none; /* 아이패드 기본 스크롤/제스처 차단하고 펜 입력만 수신 */
+      cursor: crosshair;
+      z-index: 2;
+    }
+
+    /* 키보드 타이핑용 텍스트박스 */
+    #keyboardText {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      padding: 1.25rem;
+      font-size: 1.15rem;
+      line-height: 2.2rem;
+      border: none;
+      outline: none;
+      resize: none;
+      z-index: 1;
+      display: none;
+      background-attachment: local;
+      background-image: linear-gradient(to right, white 0, transparent 0), linear-gradient(to bottom, #f1f5f9 1px, transparent 1px);
+      background-size: 100% 2.2rem;
+    }
+
+    /* 상태 표시줄 */
+    .status-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      padding: 0.75rem;
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px solid #edf2f7;
+    }
+    .indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #94a3b8;
+    }
+    .indicator.recording {
+      background: var(--danger);
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+      70% { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
+    #statusText { font-weight: 600; font-size: 0.95rem; color: #475569; }
+    #timerDisplay { font-family: monospace; font-size: 1.1rem; font-weight: 700; color: var(--danger); display: none; }
+
+    /* 메인 컨트롤 버튼들 */
+    .controls { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; margin-bottom: 1.5rem; }
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.75rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+    }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-record { background-color: var(--danger); color: white; }
+    .btn-stop { background-color: #475569; color: white; }
+    .btn-play { background-color: var(--success); color: white; }
+    .btn-play:hover:not(:disabled) { background-color: var(--success-hover); }
+    .btn-download { background-color: var(--primary); color: white; }
+    .btn-download:hover:not(:disabled) { background-color: var(--primary-hover); }
+
+    /* 오디오 플레이어 영역 */
+    .audio-review {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1.25rem;
+      background: #f1f5f9;
+      border-radius: 14px;
+    }
+    audio { width: 100%; max-width: 520px; outline: none; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Classroom English Speaking Practice</h1>
+    <p class="guide">5개 이상의 표현을 메모하고, 녹음 후 즉시 들어보며 만족할 때까지 재녹음해 보세요.</p>
+
+    <!-- 입력 모드 선택 (애플 펜슬 필기 vs 키보드 타이핑) -->
+    <div class="mode-bar">
+      <div class="mode-buttons">
+        <button id="modeDrawBtn" class="mode-btn active" type="button">✏️ 애플 펜슬 필기</button>
+        <button id="modeTextBtn" class="mode-btn" type="button">⌨️ 키보드 타이핑</button>
+      </div>
+      <button id="clearBoardBtn" class="clear-btn" type="button">지우기 (초기화)</button>
+    </div>
+
+    <!-- 대형 연습 보드 -->
+    <div class="board-container" id="boardWrapper">
+      <canvas id="pencilCanvas"></canvas>
+      <textarea id="keyboardText" placeholder="1. Could you please speak a bit louder?&#10;2. Take out your worksheet and turn to page 24.&#10;3. Please work with your partner.&#10;4. Raise your hand if you have questions.&#10;5. That wraps up today's lesson."></textarea>
+    </div>
+
+    <!-- 상태 및 타이머 -->
+    <div class="status-panel">
+      <div class="indicator" id="recIndicator"></div>
+      <span id="statusText">녹음 대기 중</span>
+      <span id="timerDisplay">00:00</span>
+    </div>
+
+    <!-- 녹음 제어 버튼 -->
+    <div class="controls">
+      <button id="startBtn" class="btn-record" type="button">🔴 녹음 시작</button>
+      <button id="stopBtn" class="btn-stop" type="button" disabled>⏹️ 녹음 완료</button>
+      <button id="playBtn" class="btn-play" type="button" disabled>▶️ 방금 녹음 바로 듣기</button>
+      <button id="downloadBtn" class="btn-download" type="button" disabled>💾 음성 파일 다운로드</button>
+    </div>
+
+    <!-- 내장 오디오 플레이어 (원하는 구간 탐색 가능) -->
+    <div class="audio-review">
+      <span style="font-size:0.9rem; font-weight:600; color:#475569;">오디오 플레이어로 세부 구간 확인:</span>
+      <audio id="audioPlayer" controls playsinline></audio>
+    </div>
+  </div>
+
+  <script>
+    /* ========================================================
+     * 1. 애플 펜슬 / 터치 드로잉 캔버스 로직
+     * ======================================================== */
+    const canvas = document.getElementById('pencilCanvas');
+    const ctx = canvas.getContext('2d');
+    const keyboardText = document.getElementById('keyboardText');
+    const modeDrawBtn = document.getElementById('modeDrawBtn');
+    const modeTextBtn = document.getElementById('modeTextBtn');
+    const clearBoardBtn = document.getElementById('clearBoardBtn');
+
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    // 레티나 디스플레이 및 아이패드 해상도 맞춤 스케일링
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      drawLinedGuide(rect.width, rect.height);
+    }
+
+    // 캔버스 배경에 줄 공책 가이드라인 그리기
+    function drawLinedGuide(w, h) {
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      const lineGap = 42;
+      for (let y = lineGap; y < h; y += lineGap) {
+        ctx.beginPath();
+        ctx.moveTo(10, y);
+        ctx.lineTo(w - 10, y);
+        ctx.stroke();
+      }
+    }
+
+    window.addEventListener('load', resizeCanvas);
+    window.addEventListener('resize', resizeCanvas);
+
+    // 포인터 이벤트(애플 펜슬, 스타일러스, 손가락 터치 완벽 지원)
+    function getCanvasPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      isDrawing = true;
+      const pos = getCanvasPos(e);
+      lastX = pos.x;
+      lastY = pos.y;
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!isDrawing) return;
+      const pos = getCanvasPos(e);
+
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.strokeStyle = '#1e293b';
+      // 애플 펜슬 필압(pressure) 감지 지원
+      ctx.lineWidth = e.pressure && e.pressure > 0 ? e.pressure * 4.5 : 2.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      lastX = pos.x;
+      lastY = pos.y;
+    });
+
+    const stopDrawing = (e) => {
+      if (isDrawing) {
+        isDrawing = false;
+        try { canvas.releasePointerCapture(e.pointerId); } catch(err){}
+      }
+    };
+    canvas.addEventListener('pointerup', stopDrawing);
+    canvas.addEventListener('pointercancel', stopDrawing);
+
+    // 모드 전환
+    modeDrawBtn.addEventListener('click', () => {
+      modeDrawBtn.classList.add('active');
+      modeTextBtn.classList.remove('active');
+      canvas.style.display = 'block';
+      keyboardText.style.display = 'none';
+    });
+
+    modeTextBtn.addEventListener('click', () => {
+      modeTextBtn.classList.add('active');
+      modeDrawBtn.classList.remove('active');
+      canvas.style.display = 'none';
+      keyboardText.style.display = 'block';
+      keyboardText.focus();
+    });
+
+    // 지우기
+    clearBoardBtn.addEventListener('click', () => {
+      if (canvas.style.display !== 'none') {
+        const rect = canvas.getBoundingClientRect();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawLinedGuide(rect.width, rect.height);
+      } else {
+        keyboardText.value = '';
+      }
+    });
+
+    /* ========================================================
+     * 2. 오디오 녹음 및 즉시 재생 (iOS 사파리/크롬 대응)
+     * ======================================================== */
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let audioBlob = null;
+    let currentAudioUrl = null;
+    let timerInterval = null;
+    let secondsElapsed = 0;
+
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const playBtn = document.getElementById('playBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const recIndicator = document.getElementById('recIndicator');
+    const statusText = document.getElementById('statusText');
+    const timerDisplay = document.getElementById('timerDisplay');
+
+    function formatTime(sec) {
+      const m = String(Math.floor(sec / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    startBtn.addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        // iOS 사파리 호환용 MIME 포맷 순위 결정
+        let mimeType = '';
+        if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+        } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          mimeType = 'audio/webm;codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+          mimeType = 'audio/webm';
+        }
+
+        mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            audioChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach(track => track.stop());
+          clearInterval(timerInterval);
+
+          const type = mediaRecorder.mimeType || 'audio/mp4';
+          audioBlob = new Blob(audioChunks, { type: type });
+
+          // 기존 URL 메모리 해제 후 새 URL 생성
+          if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
+          currentAudioUrl = URL.createObjectURL(audioBlob);
+
+          // 브라우저 플레이어에 즉시 주입 및 로드
+          audioPlayer.src = currentAudioUrl;
+          audioPlayer.load();
+
+          // 버튼 상태 갱신 (즉시 재생 및 다운로드 가능)
+          playBtn.disabled = false;
+          downloadBtn.disabled = false;
+          playBtn.textContent = "▶️ 방금 녹음 바로 듣기";
+
+          recIndicator.classList.remove('recording');
+          statusText.textContent = `녹음 완료 (${formatTime(secondsElapsed)}) - 바로 들어보거나 다시 녹음할 수 있습니다.`;
+        };
+
+        mediaRecorder.start(100); // 100ms 단위 슬라이스 수집
+
+        // 녹음 UI 시작
+        secondsElapsed = 0;
+        timerDisplay.textContent = "00:00";
+        timerDisplay.style.display = "inline";
+        timerInterval = setInterval(() => {
+          secondsElapsed++;
+          timerDisplay.textContent = formatTime(secondsElapsed);
+        }, 1000);
+
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        playBtn.disabled = true;
+        downloadBtn.disabled = true;
+        recIndicator.classList.add('recording');
+        statusText.textContent = "음성 녹음 진행 중...";
+
+      } catch (err) {
+        console.error("마이크 접근 실패:", err);
+        alert("마이크 사용 권한이 필요합니다. 사파리/크롬 설정에서 마이크를 허용해 주세요.");
+      }
+    });
+
+    // 녹음 중지
+    stopBtn.addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+      }
+    });
+
+    // [방금 녹음 바로 듣기] 원터치 토글 버튼
+    playBtn.addEventListener('click', () => {
+      if (!audioPlayer.src) return;
+
+      if (audioPlayer.paused) {
+        audioPlayer.play().then(() => {
+          playBtn.textContent = "⏸️ 일시 정지";
+        }).catch(err => {
+          console.error("재생 오류:", err);
+        });
+      } else {
+        audioPlayer.pause();
+        playBtn.textContent = "▶️ 이어서 듣기";
+      }
+    });
+
+    // 오디오 재생이 끝나면 버튼 텍스트 원상복구
+    audioPlayer.addEventListener('ended', () => {
+      playBtn.textContent = "▶️ 다시 처음부터 듣기";
+    });
+
+    // 다운로드
+    downloadBtn.addEventListener('click', () => {
+      if (!audioBlob || !currentAudioUrl) return;
+
+      const ext = audioBlob.type.includes('mp4') ? 'm4a' : 'webm';
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = currentAudioUrl;
+      a.download = `Classroom_English_Practice_${new Date().toISOString().slice(0, 10)}.${ext}`;
+      
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 100);
+    });
+  </script>
+</body>
+</html>
